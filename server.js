@@ -7,14 +7,14 @@ require('dotenv').config();
 
 // Importar middlewares de segurança
 const {
-  createRateLimiters,
-  createSlowDown,
-  sanitizeInput,
-  auditLog,
-  integrityCheck,
-  attackProtection,
-  securityHeaders,
-  helmetConfig
+    createRateLimiters,
+    createSlowDown,
+    sanitizeInput,
+    auditLog,
+    integrityCheck,
+    attackProtection,
+    securityHeaders,
+    helmetConfig
 } = require('./middleware/security');
 
 // Inicializar banco de dados SQLite
@@ -23,37 +23,48 @@ const databaseManager = require('./database/database');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configurações de segurança
+// Configurações de segurança avançada (otimizadas para plano gratuito)
 const rateLimiters = createRateLimiters();
 const slowDown = createSlowDown();
 
-// Aplicar Helmet e headers de segurança
+// Aplicar Helmet (headers de segurança)
 app.use(helmetConfig);
+
+// Aplicar headers de segurança customizados
 app.use(securityHeaders);
 
-// Aplicar middlewares de segurança extras no modo produção
+// Middleware de auditoria (otimizado para plano gratuito)
 if (process.env.NODE_ENV === 'production') {
-  app.use(auditLog);
-  app.use(integrityCheck);
-  app.use(attackProtection);
+    app.use(auditLog);
+    app.use(integrityCheck);
+    app.use(attackProtection);
 }
 
-// Rate limiting e controle de requisições
+// Rate limiting geral (reduzido para plano gratuito)
 app.use(rateLimiters.general);
+
+// Slow down para requests excessivos (otimizado)
 app.use(slowDown);
+
+// Middleware de sanitização
 app.use(sanitizeInput);
 
-// ✅ Configuração de CORS com domínio da Hostinger
+// Configuração de CORS mais robusta
 const allowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:8080',
+  'https://ratixpay-backend.onrender.com',
   'https://ratixpay.com',
-  'https://www.ratixpay.com',
-  'https://ratixpay-backend.onrender.com'
+  'https://api.ratixpay.com',
+  'https://api.seudominio.com'
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Permitir requests sem origin (como mobile apps)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -64,32 +75,34 @@ app.use(cors({
   credentials: true
 }));
 
-// Sessão e autenticação
+// Configuração de sessões
 app.use(session({
   secret: process.env.SESSION_SECRET || 'ratixpay_session_secret_2024',
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 24 * 60 * 60 * 1000 // 24 horas
   }
 }));
 
+// Inicializar Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Body parsers e arquivos públicos (uploads)
+// Middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.static('public'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Logging
+// Middleware de logging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
 
-// Inicializar banco de dados
+// Inicializar banco SQLite
 try {
   databaseManager.initialize();
   console.log('✅ Banco SQLite inicializado com sucesso');
@@ -117,7 +130,7 @@ app.use('/api', pagamentoRoutes);
 // Rota adicional para callback do Google OAuth
 app.use('/auth', authRoutes);
 
-// Health check
+// Health check endpoint para /api/health
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'OK',
@@ -130,27 +143,75 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ✅ Removido: Rotas de páginas estáticas (index.html, etc.)
+// Rota principal
+app.get('/', (req, res) => {
+  res.json({
+    message: '🚀 RatixPay API está funcionando!',
+    version: '2.0.0',
+    status: 'online',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/api/health',
+      produtos: '/api/produtos',
+      vendas: '/api/vendas',
+      dashboard: '/api/dashboard',
+      auth: '/api/auth',
+      admin: '/api/admin',
+      pagamento: '/api/pagamoz/payment'
+    },
+    docs: 'Consulte a documentação para mais informações'
+  });
+});
 
-// Middleware de erro global
+// Rotas para páginas estáticas
+const staticRoutes = [
+  { path: '/', file: 'index.html' },
+  { path: '/dashboard', file: 'dashboard.html' },
+  { path: '/criar-produto', file: 'criar-produto.html' },
+  { path: '/checkout', file: 'checkout.html' },
+  { path: '/payment/success', file: 'payment-success.html' },
+  { path: '/gestao-produtos', file: 'gestao-produtos.html' },
+  { path: '/gestao-vendas', file: 'gestao-vendas.html' },
+  { path: '/ferramentas', file: 'ferramentas.html' },
+  { path: '/cadastro-produto', file: 'cadastro-produto.html' },
+  { path: '/editar-produto/:id', file: 'editar-produto.html' },
+  { path: '/editar-produto', file: 'editar-produto.html' },
+  { path: '/saldo', file: 'saldo.html' }
+];
+
+staticRoutes.forEach(route => {
+  app.get(route.path, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', route.file));
+  });
+});
+
+// Middleware de tratamento de erros aprimorado
 app.use((err, req, res, next) => {
   console.error('❌ Erro no servidor:', err.stack);
-
+  
+  // Erro de validação
   if (err.name === 'ValidationError') {
-    return res.status(400).json({ erro: 'Dados inválidos', detalhes: err.message });
+    return res.status(400).json({
+      erro: 'Dados inválidos',
+      detalhes: err.message
+    });
   }
-
+  
+  // Erro de autenticação
   if (err.name === 'UnauthorizedError') {
-    return res.status(401).json({ erro: 'Token inválido ou expirado' });
+    return res.status(401).json({
+      erro: 'Token inválido ou expirado'
+    });
   }
-
+  
+  // Erro genérico
   res.status(500).json({
     erro: 'Erro interno do servidor',
     mensagem: process.env.NODE_ENV === 'development' ? err.message : 'Algo deu errado'
   });
 });
 
-// Rota fallback para 404
+// Rota para qualquer outra requisição (404)
 app.use('*', (req, res) => {
   res.status(404).json({
     erro: 'Rota não encontrada',
@@ -167,3 +228,4 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
