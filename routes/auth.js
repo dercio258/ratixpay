@@ -7,7 +7,7 @@ const Usuario = require('../models/Usuario');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ratixpay_secret_key_2024';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';  // URL do frontend (Hostinger)
-const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || "http://localhost:3000/auth/google/callback"; // Vai ser sobrescrito em produção
+const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || "https://ratixpay-backend.onrender.com/auth/google/callback"; // Vai ser sobrescrito em produção
 
 // Configuração do Passport Google Strategy
 passport.use(new GoogleStrategy({
