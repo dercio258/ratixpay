@@ -19,20 +19,20 @@ router.get('/estatisticas', async (req, res) => {
       WHERE pagamentoStatus = 'Aprovado'
     `).get();
     
-    // Vendas aprovadas
+    // Vendas aprovadas (corrigido: apenas vendas confirmadas)
     const vendasAprovadas = await Venda.count({ 'pagamentoStatus': 'Aprovado' });
     
     // Produtos ativos
     const produtosAtivos = await Produto.count({ 'ativo': true });
     
-    // Clientes únicos
+    // Clientes únicos (corrigido: apenas clientes com vendas aprovadas)
     const clientesUnicosResult = db.prepare(`
       SELECT COUNT(DISTINCT clienteEmail) as total 
       FROM vendas 
       WHERE pagamentoStatus = 'Aprovado'
     `).get();
     
-    // Vendas do mês
+    // Vendas do mês (corrigido: apenas vendas aprovadas)
     const vendasMes = await Venda.count({ 
       'pagamentoStatus': 'Aprovado',
       'dataInicio': inicioMes.toISOString()

@@ -69,7 +69,7 @@ const createSlowDown = () => {
     return slowDown({
         windowMs: 15 * 60 * 1000, // 15 minutos
         delayAfter: 50, // começar a desacelerar após 50 requests
-        delayMs: 500, // adicionar 500ms de delay por request
+        delayMs: () => 500, // adicionar 500ms de delay por request (corrigido)
         maxDelayMs: 20000, // máximo 20 segundos de delay
         skip: (req) => req.path === '/api/health'
     });

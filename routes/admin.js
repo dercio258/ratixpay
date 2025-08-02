@@ -69,7 +69,7 @@ router.get('/stats', async (req, res) => {
       vendasCanceladas
     ] = await Promise.all([
       Produto.count(),
-      Venda.count(),
+      Venda.count({ 'pagamentoStatus': 'Aprovado' }), // Corrigido: apenas vendas aprovadas
       Cliente.count(),
       Venda.count({ 'pagamentoStatus': 'Aprovado' }),
       Venda.count({ 'pagamentoStatus': 'Pendente' }),

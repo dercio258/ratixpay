@@ -53,9 +53,9 @@ app.use(sanitizeInput);
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:8080',
-  'https://ratixpay-backend.onrender.com',
+  'https://ratixpay.onrender.com',
   'https://ratixpay.com',
-  'https://api.ratixpay.com',
+  'https://www.seudominio.com',
   'https://api.seudominio.com'
 ];
 

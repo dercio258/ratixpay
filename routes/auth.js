@@ -6,22 +6,22 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const Usuario = require('../models/Usuario');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'ratixpay_secret_key_2024';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';  // URL do frontend (Hostinger)
-const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || "https://ratixpay-backend.onrender.com/auth/google/callback"; // Vai ser sobrescrito em produção
 
 // Configuração do Passport Google Strategy
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID || '312349657626-krr41ttgvj573822kbot4psuaa3u3af1.apps.googleusercontent.com',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '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',
-    callbackURL: GOOGLE_CALLBACK_URL
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || (process.env.NODE_ENV === 'production' 
+        ? "https://ratixpay.onrender.com/auth/google/callback"
+        : "http://localhost:3000/auth/google/callback")
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
       console.log('Google profile:', profile);
-
+      
       // Verificar se o usuário já existe por email ou Google ID
       let usuario = await Usuario.findByEmailOrGoogleId(profile.emails[0].value, profile.id);
-
+      
       if (!usuario) {
         // Criar novo usuário
         const usuarioData = {
@@ -31,7 +31,7 @@ passport.use(new GoogleStrategy({
           tipo: 'vendedor',
           ativo: true
         };
-
+        
         usuario = await Usuario.create(usuarioData);
         console.log('Novo usuário criado:', usuario);
       } else {
@@ -42,7 +42,7 @@ passport.use(new GoogleStrategy({
         }
         console.log('Usuário existente encontrado:', usuario);
       }
-
+      
       return cb(null, usuario);
     } catch (error) {
       console.error('Erro na autenticação Google:', error);
@@ -76,14 +76,14 @@ router.get('/test-google', (req, res) => {
   res.json({
     message: 'Configurações do Google OAuth',
     clientId: process.env.GOOGLE_CLIENT_ID || 'Configurado no código',
-    callbackUrl: GOOGLE_CALLBACK_URL,
+    callbackUrl: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback',
     hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET
   });
 });
 
 // Callback do Google OAuth
-router.get('/google/callback',
-  passport.authenticate('google', { failureRedirect: `${FRONTEND_URL}/login` }),
+router.get('/google/callback', 
+  passport.authenticate('google', { failureRedirect: '/?error=auth_failed' }),
   function(req, res) {
     try {
       // Gerar token JWT
@@ -96,12 +96,12 @@ router.get('/google/callback',
         JWT_SECRET,
         { expiresIn: '24h' }
       );
-
-      // Redirecionar para o frontend com token no query string
-      res.redirect(`${FRONTEND_URL}/dashboard?token=${token}`);
+      
+      // Redirecionar para o dashboard com token
+      res.redirect(`/dashboard?token=${token}`);
     } catch (error) {
       console.error('Erro no callback Google:', error);
-      res.redirect(`${FRONTEND_URL}/login?error=auth_failed`);
+      res.redirect('/?error=auth_failed');
     }
   }
 );
@@ -110,20 +110,20 @@ router.get('/google/callback',
 router.get('/verificar', async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
-
+    
     if (!token) {
       return res.status(401).json({ erro: 'Token não fornecido' });
     }
-
+    
     const decoded = jwt.verify(token, JWT_SECRET);
-
+    
     // Buscar usuário no banco
     const usuario = await Usuario.findById(decoded.id);
-
+    
     if (!usuario || !usuario.ativo) {
       return res.status(401).json({ erro: 'Token inválido' });
     }
-
+    
     res.json({
       valido: true,
       usuario: {
@@ -149,6 +149,8 @@ router.post('/logout', (req, res) => {
   });
 });
 
+
+
 // GET - Status da autenticação
 router.get('/status', (req, res) => {
   if (req.isAuthenticated()) {
@@ -167,3 +169,4 @@ router.get('/status', (req, res) => {
 });
 
 module.exports = router;
+
