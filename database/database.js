@@ -1,4 +1,4 @@
-const Database = require('better-sqlite3');
+const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
@@ -17,11 +17,16 @@ class DatabaseManager {
                 fs.mkdirSync(dbDir, { recursive: true });
             }
 
-            this.db = new Database(this.dbPath);
+            this.db = new sqlite3.Database(this.dbPath, (err) => {
+                if (err) {
+                    console.error('❌ Erro ao conectar com SQLite:', err.message);
+                    throw err;
+                }
+            });
             
             // Configurar o banco
-            this.db.pragma('journal_mode = WAL');
-            this.db.pragma('foreign_keys = ON');
+            this.db.run('PRAGMA journal_mode = WAL');
+            this.db.run('PRAGMA foreign_keys = ON');
             
             // Criar tabelas
             this.createTables();
@@ -37,7 +42,7 @@ class DatabaseManager {
     // Criar todas as tabelas
     createTables() {
         // Tabela de produtos
-        this.db.exec(`
+        this.db.run(`
             CREATE TABLE IF NOT EXISTS produtos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 customId TEXT UNIQUE,
@@ -56,7 +61,7 @@ class DatabaseManager {
         `);
 
         // Tabela de vendas
-        this.db.exec(`
+        this.db.run(`
             CREATE TABLE IF NOT EXISTS vendas (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 produtoId INTEGER NOT NULL,

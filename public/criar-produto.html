@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RatixPay - Criar Produto</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="assets/js/config.js"></script>
+</head>
+<body>
+    <div class="criar-produto-container">
+        <!-- Barra lateral com passos -->
+        <div class="steps-sidebar">
+            <h2><a href="dashboard.html" style="color: #007bff; text-decoration: none;">RatixPay</a></h2>
+            <h3 style="text-align: center; margin-bottom: 30px; color: white;">Criar Produto</h3>
+            <div class="steps">
+                <div class="step active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Tipo de Produto</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Informações</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Conteúdo</div>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Finalizar</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conteúdo principal -->
+        <div class="main-content">
+            <!-- Etapa 1: Tipo de Produto -->
+            <div class="step-content active" id="step1">
+                <h1>Escolher Tipo de Produto</h1>
+                <div class="product-types">
+                    <div class="product-type-card" data-type="curso">
+                        <i class="fas fa-graduation-cap"></i>
+                        <h3>📘 Curso Online</h3>
+                        <p>Crie cursos com múltiplos módulos e aulas</p>
+                    </div>
+                    <div class="product-type-card" data-type="ebook">
+                        <i class="fas fa-book"></i>
+                        <h3>📕 eBook</h3>
+                        <p>Publique livros digitais em formato PDF</p>
+                    </div>
+                </div>
+                <div class="step-navigation">
+                    <button class="btn-next" onclick="nextStep()"disabled>Próximo</button>
+                </div>
+            </div>
+
+            <!-- Etapa 2: Informações -->
+            <div class="step-content" id="step2">
+                <h1>Informações do Produto</h1>
+                <form id="productInfoForm">
+                    <div class="form-row">
+                        <div class="form-fields">
+                            <div class="input-group">
+                                <label for="productImageUrl">URL da Imagem:</label>
+                                <input type="url" id="productImageUrl" placeholder="https://exemplo.com/imagem.jpg" oninput="toggleImageInputs()">
+                                <small>Cole aqui a URL da imagem do produto</small>
+                            </div>
+                            <div class="input-group">
+                                <label for="productImageFile">Ou faça upload da imagem:</label>
+                                <input type="file" id="productImageFile" accept="image/*" onchange="toggleImageInputs()">
+                                <small>Escolha uma imagem do seu dispositivo (ou Google Drive)</small>
+                            </div>
+                        </div>
+                        <div class="form-fields">
+                            <div class="input-group">
+                                <label for="productName">Nome do Produto:</label>
+                                <input type="text" id="productName" required>
+                            </div>
+                            <div class="input-group">
+                                <label for="productCategory">Categoria:</label>
+                                <select id="productCategory" required>
+                                    <option value="">Selecione uma categoria</option>
+                                    <option value="marketing">Marketing</option>
+                                    <option value="programacao">Programação</option>
+                                    <option value="financeiro">Financeiro</option>
+                                    <option value="idiomas">Idiomas</option>
+                                    <option value="saude">Saúde</option>
+                                    <option value="ebook">eBook</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="productDescription">Descrição:</label>
+                        <textarea id="productDescription" rows="4" required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="productPrice">Preço (MZN):</label>
+                            <input type="number" id="productPrice" step="0.01" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="productDiscount">Desconto (%):</label>
+                            <input type="number" id="productDiscount" min="0" max="100" value="0">
+                        </div>
+                        <div class="input-group">
+                            <label for="finalPrice">Preço Final:</label>
+                            <input type="text" id="finalPrice" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="couponCode">Código de Cupom:</label>
+                        <input type="text" id="couponCode">
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="allowAffiliates">
+                        <label for="allowAffiliates">Permitir afiliados</label>
+                    </div>
+                </form>
+                
+                <div class="step-navigation">
+                    <button class="btn-prev" onclick="prevStep()">Anterior</button>
+                    <button class="btn-next" onclick="nextStep()">Próximo</button>
+                </div>
+            </div>
+
+            <!-- Etapa 3: Conteúdo -->
+            <div class="step-content" id="step3">
+                <h1>Conteúdo do Produto</h1>
+                <div id="courseContent" style="display: none;">
+                    <div class="input-group">
+                        <label for="courseContentUrl">URL do Conteúdo do Curso:</label>
+                        <input type="url" id="courseContentUrl" placeholder="https://exemplo.com/curso-completo" required>
+                        <small>Cole aqui a URL onde está hospedado o conteúdo do curso (ex: plataforma de vídeos, site, etc.)</small>
+                    </div>
+                </div>
+                
+                <div id="ebookContent" style="display: none;">
+                    <div class="input-group">
+                        <label for="ebookContentUrl">URL do eBook (PDF):</label>
+                        <input type="url" id="ebookContentUrl" placeholder="https://exemplo.com/ebook.pdf" required>
+                        <small>Cole aqui a URL direta do arquivo PDF do eBook</small>
+                    </div>
+                </div>
+                
+                <div class="step-navigation">
+                    <button class="btn-prev" onclick="prevStep()">Anterior</button>
+                    <button class="btn-next" onclick="nextStep()">Próximo</button>
+                </div>
+            </div>
+
+            <!-- Etapa 4: Finalizar -->
+            <div class="step-content" id="step4">
+                <h1>Finalizar Cadastro</h1>
+                <div class="review-checklist">
+                    <h3>Revisão do Produto</h3>
+                    <div class="checklist-item" id="checkType">
+                        <i class="fas fa-times"></i>
+                        <span>Tipo selecionado</span>
+                    </div>
+                    <div class="checklist-item" id="checkName">
+                        <i class="fas fa-times"></i>
+                        <span>Nome do produto</span>
+                    </div>
+                    <div class="checklist-item" id="checkImage">
+                        <i class="fas fa-times"></i>
+                        <span>Imagem anexada</span>
+                    </div>
+                    <div class="checklist-item" id="checkContent">
+                        <i class="fas fa-times"></i>
+                        <span>Conteúdo verificado</span>
+                    </div>
+                </div>
+                
+                <div class="product-summary" id="productSummary">
+                    <!-- Resumo do produto será preenchido via JavaScript -->
+                </div>
+                
+                <div class="step-navigation">
+                    <button class="btn-prev" onclick="prevStep()">Anterior</button>
+                    <button class="btn-finish">Finalizar Cadastro</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/criar-produto-new.js"></script>
+</body>
+</html>
+

@@ -18,7 +18,7 @@ const {
 } = require('./middleware/security');
 
 // Inicializar banco de dados SQLite
-const databaseManager = require('./database/database');
+const databaseManager = require('./database/database_simple');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -55,8 +55,7 @@ const allowedOrigins = [
   'http://localhost:8080',
   'https://ratixpay.onrender.com',
   'https://ratixpay.com',
-  'https://www.seudominio.com',
-  'https://api.seudominio.com'
+  'https://www.ratixpay.com'
 ];
 
 app.use(cors({
@@ -67,12 +66,14 @@ app.use(cors({
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log(`❌ CORS: Origin não permitida: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true,
+  optionsSuccessStatus: 200 // Para suporte a navegadores legados
 }));
 
 // Configuração de sessões
@@ -96,9 +97,21 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.static('public'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Middleware de logging
+// Middleware de logging aprimorado
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  const timestamp = new Date().toISOString();
+  const method = req.method;
+  const url = req.originalUrl || req.url;
+  const userAgent = req.get('User-Agent') || 'Unknown';
+  const ip = req.ip || req.connection.remoteAddress || 'Unknown';
+  
+  console.log(`📝 ${timestamp} - ${method} ${url} - IP: ${ip.substring(0, 15)} - UA: ${userAgent.substring(0, 50)}`);
+  
+  // Log do body para POST/PUT (apenas em desenvolvimento)
+  if (process.env.NODE_ENV === 'development' && (method === 'POST' || method === 'PUT')) {
+    console.log(`📦 Body:`, JSON.stringify(req.body, null, 2).substring(0, 200));
+  }
+  
   next();
 });
 
@@ -143,24 +156,50 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Rota principal
+// Rota principal - Servir frontend ou informações da API
 app.get('/', (req, res) => {
-  res.json({
-    message: '🚀 RatixPay API está funcionando!',
-    version: '2.0.0',
-    status: 'online',
-    timestamp: new Date().toISOString(),
-    endpoints: {
-      health: '/api/health',
-      produtos: '/api/produtos',
-      vendas: '/api/vendas',
-      dashboard: '/api/dashboard',
-      auth: '/api/auth',
-      admin: '/api/admin',
-      pagamento: '/api/pagamoz/payment'
-    },
-    docs: 'Consulte a documentação para mais informações'
-  });
+  // Se o request aceita HTML, servir o frontend
+  if (req.accepts('html')) {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
+      if (err) {
+        // Se não encontrar o arquivo, retornar informações da API
+        res.json({
+          message: '🚀 RatixPay API está funcionando!',
+          version: '2.0.0',
+          status: 'online',
+          timestamp: new Date().toISOString(),
+          endpoints: {
+            health: '/api/health',
+            produtos: '/api/produtos',
+            vendas: '/api/vendas',
+            dashboard: '/api/dashboard',
+            auth: '/api/auth',
+            admin: '/api/admin',
+            pagamento: '/api/pagamoz/payment'
+          },
+          docs: 'Consulte a documentação para mais informações'
+        });
+      }
+    });
+  } else {
+    // Para requests de API, retornar JSON
+    res.json({
+      message: '🚀 RatixPay API está funcionando!',
+      version: '2.0.0',
+      status: 'online',
+      timestamp: new Date().toISOString(),
+      endpoints: {
+        health: '/api/health',
+        produtos: '/api/produtos',
+        vendas: '/api/vendas',
+        dashboard: '/api/dashboard',
+        auth: '/api/auth',
+        admin: '/api/admin',
+        pagamento: '/api/pagamoz/payment'
+      },
+      docs: 'Consulte a documentação para mais informações'
+    });
+  }
 });
 
 // Rotas para páginas estáticas
@@ -211,20 +250,47 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Rota para qualquer outra requisição (404)
+// Rota para qualquer outra requisição - Suporte a SPA
 app.use('*', (req, res) => {
-  res.status(404).json({
-    erro: 'Rota não encontrada',
-    path: req.originalUrl
-  });
+  // Se for uma requisição para API que não existe, retornar 404 JSON
+  if (req.originalUrl.startsWith('/api/')) {
+    return res.status(404).json({
+      erro: 'Rota da API não encontrada',
+      path: req.originalUrl,
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  // Para outras rotas, servir index.html (SPA fallback)
+  if (req.accepts('html')) {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'), (err) => {
+      if (err) {
+        // Se não encontrar index.html, retornar 404 JSON
+        res.status(404).json({
+          erro: 'Página não encontrada',
+          path: req.originalUrl,
+          timestamp: new Date().toISOString()
+        });
+      }
+    });
+  } else {
+    // Para requests que não aceitam HTML, retornar 404 JSON
+    res.status(404).json({
+      erro: 'Recurso não encontrado',
+      path: req.originalUrl,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor RatixPay rodando na porta ${PORT}`);
   console.log(`📱 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 URL: http://localhost:${PORT}`);
+  console.log(`🔗 URL Local: http://localhost:${PORT}`);
+  console.log(`🌐 URL Externa: http://0.0.0.0:${PORT}`);
   console.log(`📊 Health Check: http://localhost:${PORT}/api/health`);
+  console.log(`🔧 CORS configurado para: ${allowedOrigins.join(', ')}`);
 });
 
 module.exports = app;

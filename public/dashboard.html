@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RatixPay - Dashboard</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="assets/js/config.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Menu Lateral -->
+        <div class="sidebar">
+            <h2>RatixPay</h2>
+            <ul>
+                <li>
+                    <a href="dashboard.html" class="active" data-section="painel">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Painel</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="gestao-produtos.html" data-section="produtos">
+                        <i class="fas fa-box"></i>
+                        <span>Gestão de Produto</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="gestao-vendas.html" data-section="vendas">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Gestão de Vendas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="integracoes.html" data-section="integracoes">
+                        <i class="fas fa-plug"></i>
+                        <span>Integrações</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="saldo.html" data-section="saldo">
+                        <i class="fas fa-wallet"></i>
+                        <span>Saldo</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="ferramentas.html" data-section="ferramentas">
+                        <i class="fas fa-tools"></i>
+                        <span>Ferramentas</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Conteúdo Principal -->
+        <div class="main-content">
+            <!-- Header com perfil -->
+            <div class="dashboard-header">
+                <h1 id="welcomeMessage">Seja bem-vindo</h1>
+                <div class="profile-section">
+                    <div class="profile-info">
+                        <span class="profile-name" id="userName">Carregando...</span>
+                        <span class="profile-role" id="userRole">Carregando...</span>
+                        <span class="profile-email" id="userEmail" style="font-size: 12px; color: #666;"></span>
+                        <button id="logoutBtn" class="logout-btn" style="margin-top: 5px; padding: 5px 10px; background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">
+                            <i class="fas fa-sign-out-alt"></i> Sair
+                        </button>
+                    </div>
+                    <div class="profile-avatar" id="userAvatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cards de Estatísticas -->
+            <div class="stats-grid">
+                <div class="card">
+                    <h3>Receita Total</h3>
+                    <p id="receitaTotal" data-loading>MZN 0,00</p>
+                </div>
+                <div class="card">
+                    <h3>Vendas Aprovadas</h3>
+                    <p id="vendasAprovadas" data-loading>0</p>
+                </div>
+            </div>
+            
+            <!-- Gráfico de Vendas -->
+            <div class="chart-container">
+                <div class="card">
+                    <h3>Vendas Semanais</h3>
+                    <canvas id="salesChart" width="400" height="200"></canvas>
+                    <small id="lastUpdate" style="color: #666; font-size: 0.8em;">Carregando...</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/dashboard.js"></script>
+</body>
+</html>
+

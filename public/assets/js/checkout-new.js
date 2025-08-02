@@ -1,0 +1,669 @@
+
+
+// Configuração da API
+const API_BASE = window.RatixPayConfig ? window.RatixPayConfig.API_BASE : (window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : 'https://ratixpay.onrender.com/api');
+
+
+
+
+
+// Variáveis globais
+let currentProduct = null;
+let orderData = {};
+
+// Função para fazer requisições à API
+async function apiRequest(endpoint, options = {}) {
+    try {
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            },
+            ...options
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Erro na API:', error);
+        throw error;
+    }
+}
+
+// Função para mostrar notificação
+function showNotification(message, type = 'success') {
+    const existingNotification = document.querySelector('.notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <span>${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()">×</button>
+        </div>
+    `;
+    
+    if (!document.querySelector('#notification-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'notification-styles';
+        styles.textContent = `
+            .notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                font-weight: bold;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            }
+            .notification.success { background: #28a745; }
+            .notification.error { background: #dc3545; }
+            .notification.warning { background: #ffc107; color: #333; }
+            .notification-content {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .notification button {
+                background: none;
+                border: none;
+                color: inherit;
+                font-size: 18px;
+                cursor: pointer;
+                padding: 0;
+                width: 20px;
+                height: 20px;
+            }
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Função para carregar produto
+async function loadProduct() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('id');
+    
+    if (!productId) {
+        showNotification('ID do produto não encontrado', 'error');
+        return;
+    }
+    
+    try {
+        currentProduct = await apiRequest(`/produtos/${productId}`);
+        displayProduct();
+    } catch (error) {
+        console.error('Erro ao carregar produto:', error);
+        showNotification('Erro ao carregar produto', 'error');
+        
+        // Usar produto de fallback se a API falhar
+        currentProduct = {
+            _id: productId,
+            nome: 'Produto de Exemplo',
+            tipo: 'Curso Online',
+            preco: 297.00,
+            desconto: 10,
+            precoComDesconto: 267.30,
+            descricao: 'Produto de exemplo para demonstração'
+        };
+        displayProduct();
+    }
+}
+
+function displayProduct() {
+    if (!currentProduct) return;
+
+    const nameEl = document.getElementById('productName');
+    if (nameEl) nameEl.textContent = currentProduct.nome;
+
+    const customIdEl = document.getElementById('productCustomId');
+            if (customIdEl) customIdEl.textContent = currentProduct.customId || currentProduct.id;
+
+    const typeEl = document.getElementById('productType');
+    if (typeEl) typeEl.textContent = currentProduct.tipo;
+
+    const priceEl = document.getElementById('productPrice');
+    if (priceEl) priceEl.textContent = `MZN ${currentProduct.preco.toFixed(2).replace('.', ',')}`;
+
+    const discountEl = document.getElementById('productDiscount');
+    const finalPriceEl = document.getElementById('finalPrice');
+    const discountInfoEl = document.getElementById('discountInfo');
+    if (currentProduct.desconto > 0) {
+        if (discountEl) discountEl.textContent = `${currentProduct.desconto}% OFF`;
+        if (finalPriceEl) finalPriceEl.textContent = `MZN ${currentProduct.precoComDesconto.toFixed(2).replace('.', ',')}`;
+        if (discountInfoEl) discountInfoEl.style.display = 'block';
+    } else {
+        if (finalPriceEl) finalPriceEl.textContent = `MZN ${currentProduct.preco.toFixed(2).replace('.', ',')}`;
+        if (discountInfoEl) discountInfoEl.style.display = 'none';
+    }
+
+    const descEl = document.getElementById('productDescription');
+    if (descEl) descEl.textContent = currentProduct.descricao || '';
+
+    const totalEl = document.getElementById('total');
+    if (totalEl) totalEl.textContent = `MZN ${(currentProduct.precoComDesconto || currentProduct.preco).toFixed(2).replace('.', ',')}`;
+
+    // Montar a tag img com a url e o onerror para fallback SVG em base64
+    const imagemUrl = currentProduct.imagemUrl || currentProduct.imageUrl || '';
+    const imgHTML = `<img src="${imagemUrl}" alt="${currentProduct.nome}" class="product-image"
+        onerror="this.onerror=null;this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRjhGOUZBIi8+CjxwYXRoIGQ9Ik00MCAyOEMzNy43OTA5IDI4IDM2IDI5Ljc5MDkgMzYgMzJWNDhDMzYgNTAuMjA5MSAzNy43OTA5IDUyIDQwIDUySDQ4QzUwLjIwOTEgNTIgNTIgNTAuMjA5MSA1MiA0OFY0OEM1MiA0NS43OTA5IDUwLjIwOTEgNDQgNDggNDRINDBDMzcuNzkwOSA0NCAzNiA0NS43OTA5IDM2IDQ4VjMyWiIgZmlsbD0iI0U5RUNFRiIvPgo8L3N2Zz4K';">`;
+    const productCard = document.getElementById('productCard');
+    const imgExistente = productCard ? productCard.querySelector('img.product-image') : null;
+    if (productCard) {
+        if (imgExistente) {
+            imgExistente.outerHTML = imgHTML;
+        } else {
+            productCard.insertAdjacentHTML('afterbegin', imgHTML);
+        }
+    }
+}
+
+
+
+// Função para validar formulário
+function validateForm() {
+    const requiredFields = [
+        'fullName',
+        'email'
+    ];
+    
+    for (let fieldId of requiredFields) {
+        const field = document.getElementById(fieldId);
+        if (!field || !field.value.trim()) {
+            field?.focus();
+            showNotification(`Por favor, preencha o campo: ${field?.placeholder || fieldId}`, 'error');
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+// Função para coletar dados do formulário
+function collectFormData() {
+    orderData.customer = {
+        nome: document.getElementById('fullName').value,
+        email: document.getElementById('email').value
+    };
+    
+    orderData.product = currentProduct;
+    orderData.coupon = currentProduct.cupomAplicado || '';
+}
+
+// Função para mostrar spinner de loading
+function showLoadingSpinner(message = 'Processando pagamento...') {
+    let spinner = document.getElementById('loadingSpinner');
+    if (!spinner) {
+        spinner = document.createElement('div');
+        spinner.id = 'loadingSpinner';
+        spinner.innerHTML = `
+            <div class="spinner-overlay">
+                <div class="spinner-container">
+                    <div class="spinner"></div>
+                    <div class="spinner-message">${message}</div>
+                    <div class="spinner-subtitle">Não feche esta página</div>
+                </div>
+            </div>
+        `;
+        const style = document.createElement('style');
+        style.textContent = `
+            .spinner-overlay {
+                position: fixed; 
+                top: 0; 
+                left: 0; 
+                width: 100vw; 
+                height: 100vh;
+                background: rgba(0,0,0,0.8); 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                z-index: 3000;
+                backdrop-filter: blur(5px);
+            }
+            .spinner-container {
+                text-align: center;
+                background: white;
+                padding: 40px;
+                border-radius: 20px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                max-width: 400px;
+                width: 90%;
+            }
+            .spinner {
+                border: 4px solid #f3f3f3; 
+                border-top: 4px solid #3b82f6; 
+                border-radius: 50%; 
+                width: 60px; 
+                height: 60px; 
+                animation: spin 1s linear infinite;
+                margin: 0 auto 20px;
+            }
+            @keyframes spin { 
+                0% { transform: rotate(0deg); } 
+                100% { transform: rotate(360deg); } 
+            }
+            .spinner-message { 
+                color: #333; 
+                font-size: 1.2rem; 
+                margin-bottom: 10px; 
+                font-weight: bold; 
+            }
+            .spinner-subtitle {
+                color: #666;
+                font-size: 0.9rem;
+            }
+        `;
+        document.head.appendChild(style);
+        document.body.appendChild(spinner);
+    } else {
+        spinner.querySelector('.spinner-message').textContent = message;
+        spinner.style.display = 'flex';
+    }
+}
+
+function hideLoadingSpinner() {
+    const spinner = document.getElementById('loadingSpinner');
+    if (spinner) spinner.style.display = 'none';
+}
+
+// Função para processar pagamento com Paga Moz
+async function processPaymentWithPagaMoz(paymentData) {
+    try {
+        // Fazer requisição para iniciar pagamento
+        const result = await apiRequest('/pagamoz/payment', {
+            method: 'POST',
+            body: JSON.stringify(paymentData)
+        });
+
+        if (result.success) {
+            return {
+                success: true,
+                transactionId: result.transactionId,
+                checkoutUrl: result.checkoutUrl,
+                status: 'redirecting'
+            };
+        } else {
+            throw new Error(result.error || 'Erro ao iniciar pagamento');
+        }
+    } catch (error) {
+        console.error('Erro no processamento Paga Moz:', error);
+        throw new Error('Erro ao processar pagamento: ' + error.message);
+    }
+}
+
+// Função para verificar status da transação Paga Moz
+async function checkPagaMozStatus(transactionId) {
+    try {
+        const response = await apiRequest(`/pagamoz/transaction/${transactionId}`);
+        
+        if (response.success) {
+            return {
+                status: response.transaction.status,
+                message: `Status: ${response.transaction.status}`,
+                transaction: response.transaction
+            };
+        } else {
+            throw new Error('Erro ao verificar status');
+        }
+    } catch (error) {
+        console.error('Erro ao verificar status Paga Moz:', error);
+        throw error;
+    }
+}
+
+// Função para mostrar status da transação
+function showTransactionStatus(status, valor, transacaoId) {
+    let statusMsg = '';
+    let color = '#888';
+    let icon = 'info-circle';
+    
+    if (status === 'pending' || status === 'pendente') {
+        statusMsg = 'Transação pendente. Aguarde e digite o PIN no seu celular.';
+        color = '#f59e42';
+        icon = 'clock';
+    } else if (status === 'completed' || status === 'concluida' || status === 'aprovado') {
+        statusMsg = 'Pagamento concluído com sucesso!';
+        color = '#28a745';
+        icon = 'check-circle';
+    } else if (status === 'failed' || status === 'falha' || status === 'rejeitado') {
+        statusMsg = 'Pagamento falhou ou foi cancelado.';
+        color = '#dc3545';
+        icon = 'times-circle';
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'transaction-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="status-icon" style="color: ${color}; font-size: 3rem; margin-bottom: 20px;">
+                <i class="fas fa-${icon}"></i>
+            </div>
+            <h3>Status do Pagamento</h3>
+            <div class="transaction-info">
+                <p><strong>ID da Transação:</strong> ${transacaoId || '-'}</p>
+                <p><strong>Valor:</strong> MZN ${valor && typeof valor === 'number' ? valor.toFixed(2).replace('.', ',') : (valor || '-')}</p>
+                <p style="color:${color}; font-weight:bold;">${statusMsg}</p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="close-btn">Fechar</button>
+        </div>
+    `;
+    
+    // Adicionar estilos do modal se não existirem
+    if (!document.querySelector('#transaction-modal-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'transaction-modal-styles';
+        styles.textContent = `
+            .transaction-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+            }
+            .modal-content {
+                background: white;
+                padding: 30px;
+                border-radius: 15px;
+                text-align: center;
+                max-width: 400px;
+                width: 90%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            }
+            .transaction-info {
+                margin: 20px 0;
+                text-align: left;
+            }
+            .close-btn {
+                background: #3b82f6;
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                border-radius: 8px;
+                cursor: pointer;
+                font-weight: bold;
+                margin-top: 15px;
+                transition: background 0.3s;
+            }
+            .close-btn:hover {
+                background: #2563eb;
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+    
+    document.body.appendChild(modal);
+}
+
+// Função para processar pagamento
+async function processPayment(customerData) {
+    // Como removemos a seleção de método, vamos usar M-Pesa como padrão
+    const methodPagaMoz = 'Mpesa';
+    const methodVenda = 'M-Pesa';
+    
+    // Número de telefone padrão ou você pode solicitar ao usuário
+    const phone = '847792543'; // Número padrão para teste
+    
+    const paymentData = {
+        produtoId: currentProduct._id || currentProduct.id,
+        clienteNome: customerData.nome,
+        clienteEmail: customerData.email,
+        phoneNumber: phone,
+        value: (currentProduct.precoComDesconto || currentProduct.preco).toString(),
+        valorOriginal: currentProduct.preco,
+        method: methodPagaMoz,
+        methodVenda: methodVenda,
+        context: `Pagamento do produto ${currentProduct.nome}`,
+        returnUrl: window.location.origin + '/payment-success.html',
+        callback: window.location.origin + '/api/pagamoz/callback'
+    };
+
+    try {
+        // Mostrar loading spinner
+        showLoadingSpinner('Iniciando pagamento com Paga Moz...');
+        
+        // Processar pagamento com Paga Moz
+        const result = await processPaymentWithPagaMoz(paymentData);
+        
+        if (result.success) {
+            if (result.status === 'redirecting') {
+                hideLoadingSpinner();
+                showNotification('Redirecionando para página de pagamento...', 'success');
+                
+                // Aguardar um momento antes de redirecionar
+                setTimeout(() => {
+                    window.location.href = result.checkoutUrl;
+                }, 2000);
+                return;
+            } else {
+                hideLoadingSpinner();
+                showTransactionStatus('pending', paymentData.value, result.transactionId);
+                
+                // Iniciar polling para verificar status
+                let attempts = 0;
+                const maxAttempts = 30; // 5 minutos (10 segundos cada)
+                
+                const checkStatus = async () => {
+                    attempts++;
+                    showLoadingSpinner(`Verificando status do pagamento... (${attempts}/${maxAttempts})`);
+                    
+                    try {
+                        const statusResult = await checkPagaMozStatus(result.transactionId);
+                        hideLoadingSpinner();
+                        
+                        if (statusResult.status === 'completed') {
+                            showTransactionStatus('completed', paymentData.value, result.transactionId);
+                            return;
+                        } else if (statusResult.status === 'failed') {
+                            showTransactionStatus('failed', paymentData.value, result.transactionId);
+                            return;
+                        } else if (attempts < maxAttempts) {
+                            // Continuar polling
+                            setTimeout(checkStatus, 10000); // 10 segundos
+                        } else {
+                            showTransactionStatus('pending', paymentData.value, result.transactionId);
+                        }
+                    } catch (error) {
+                        hideLoadingSpinner();
+                        showTransactionStatus('failed', paymentData.value, result.transactionId);
+                    }
+                };
+                
+                // Iniciar verificação após 10 segundos
+                setTimeout(checkStatus, 10000);
+            }
+        } else {
+            hideLoadingSpinner();
+            showNotification(result.message || 'Erro ao processar pagamento', 'error');
+        }
+    } catch (error) {
+        hideLoadingSpinner();
+        showNotification('Erro ao processar pagamento: ' + error.message, 'error');
+    }
+}
+
+// Função para finalizar pedido
+async function finishOrder() {
+    if (!validateForm()) return;
+    
+    collectFormData();
+    
+    const finishBtn = document.getElementById('finishOrderBtn');
+    const originalText = finishBtn.textContent;
+    finishBtn.textContent = 'Processando...';
+    finishBtn.disabled = true;
+    
+    try {
+        await processPayment(orderData.customer);
+        finishBtn.textContent = originalText;
+        finishBtn.disabled = false;
+    } catch (error) {
+        finishBtn.textContent = originalText;
+        finishBtn.disabled = false;
+    }
+}
+
+// Função para obter IP do usuário (simulação)
+async function getUserIP() {
+    try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        return data.ip;
+    } catch (error) {
+        return '127.0.0.1';
+    }
+}
+
+// Função para mostrar informações da transação
+function showTransactionInfo(venda) {
+    const modal = document.createElement('div');
+    modal.className = 'transaction-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>Pedido Realizado com Sucesso!</h3>
+            <div class="transaction-info">
+                <p><strong>ID da Transação:</strong> ${venda.transacaoId}</p>
+                <p><strong>Valor:</strong> MZN ${venda.valor.toFixed(2).replace('.', ',')}</p>
+                <p><strong>Status:</strong> ${venda.status}</p>
+                <p><strong>ID do Produto:</strong> ${venda.produtoCustomId || venda.produtoId}</p>
+                <p><em>Você será redirecionado em alguns segundos...</em></p>
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()">Fechar</button>
+        </div>
+    `;
+    
+    // Adicionar estilos do modal
+    if (!document.querySelector('#modal-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'modal-styles';
+        styles.textContent = `
+            .transaction-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+            }
+            .modal-content {
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                text-align: center;
+                max-width: 400px;
+                width: 90%;
+            }
+            .transaction-info {
+                margin: 20px 0;
+                text-align: left;
+            }
+            .modal-content button {
+                background: #007bff;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                margin-top: 15px;
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+    
+    document.body.appendChild(modal);
+}
+
+function openPaymentIframeModal(checkoutUrl) {
+    // Remove modal antigo se existir
+    const oldModal = document.getElementById('pagamoz-iframe-modal');
+    if (oldModal) oldModal.remove();
+
+    // Cria modal
+    const modal = document.createElement('div');
+    modal.id = 'pagamoz-iframe-modal';
+    modal.style = `
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;
+    `;
+
+    // Conteúdo do modal
+    modal.innerHTML = `
+        <div style="background: #fff; border-radius: 12px; max-width: 420px; width: 95vw; height: 80vh; box-shadow: 0 8px 32px #0003; position: relative; display: flex; flex-direction: column;">
+            <button onclick="document.getElementById('pagamoz-iframe-modal').remove()" style="position:absolute;top:10px;right:10px;font-size:1.5rem;background:none;border:none;cursor:pointer;">&times;</button>
+            <iframe src="${checkoutUrl}" style="flex:1; width:100%; border:none; border-radius: 0 0 12px 12px; min-height: 400px;" allow="payment *"></iframe>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// Inicialização quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Inicializando checkout...');
+    
+    // Carregar produto
+    loadProduct();
+    
+    // Configurar métodos de pagamento
+    const paymentMethods = document.querySelectorAll('.payment-method');
+    paymentMethods.forEach(method => {
+        method.addEventListener('click', function() {
+            selectPaymentMethod(this.getAttribute('data-method'));
+        });
+    });
+    
+    // Configurar botão de finalizar
+    const checkoutForm = document.getElementById('checkoutForm');
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            finishOrder();
+        });
+    }
+    
+    // Configurar Enter no campo de cupom
+    const couponInput = document.getElementById('couponCode');
+    if (couponInput) {
+        couponInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                applyCoupon();
+            }
+        });
+    }
+
+    // Adicionar evento para auto selecionar método ao digitar telefone
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', autoSelectPaymentMethodByPhone);
+    }
+    
+    console.log('Checkout inicializado com sucesso');
+});
+

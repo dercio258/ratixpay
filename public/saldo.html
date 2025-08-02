@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RatixPay - Saldo</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="assets/js/config.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Menu Lateral -->
+        <div class="sidebar">
+            <h2>RatixPay</h2>
+            <ul>
+                <li>
+                    <a href="dashboard.html" data-section="painel">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Painel</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="gestao-produtos.html" data-section="produtos">
+                        <i class="fas fa-box"></i>
+                        <span>Gestão de Produto</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="gestao-vendas.html" data-section="vendas">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Gestão de Vendas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="integracoes.html" data-section="integracoes">
+                        <i class="fas fa-plug"></i>
+                        <span>Integrações</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="saldo.html" class="active" data-section="saldo">
+                        <i class="fas fa-wallet"></i>
+                        <span>Saldo</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="ferramentas.html" data-section="ferramentas">
+                        <i class="fas fa-tools"></i>
+                        <span>Ferramentas</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Conteúdo Principal -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="dashboard-header">
+                <h1>Saldo e Transações</h1>
+            </div>
+            
+            <!-- Cards de Saldo -->
+            <div class="balance-cards">
+                <div class="balance-card">
+                    <div class="balance-icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="balance-info">
+                        <h3>Saldo Disponível</h3>
+                        <p id="saldoDisponivel">MZN 0,00</p>
+                    </div>
+                </div>
+                
+                <div class="balance-card">
+                    <div class="balance-icon">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <div class="balance-info">
+                        <h3>Entradas do Mês</h3>
+                        <p id="entradasMes">MZN 0,00</p>
+                    </div>
+                </div>
+                
+                <div class="balance-card">
+                    <div class="balance-icon">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div class="balance-info">
+                        <h3>Saídas do Mês</h3>
+                        <p id="saidasMes">MZN 0,00</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Histórico de Transações -->
+            <div class="transactions-container">
+                <div class="transactions-header">
+                    <h2>Histórico de Transações</h2>
+                    <div class="transaction-filters">
+                        <select id="filterStatus">
+                            <option value="">Todos os Status</option>
+                            <option value="Aprovado">Aprovado</option>
+                            <option value="Pendente">Pendente</option>
+                            <option value="Cancelado">Cancelado</option>
+                        </select>
+                        <select id="filterPeriod">
+                            <option value="7">Últimos 7 dias</option>
+                            <option value="30" selected>Últimos 30 dias</option>
+                            <option value="90">Últimos 90 dias</option>
+                            <option value="all">Todos</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="transactions-list" id="transactionsList">
+                    <!-- Transações serão carregadas aqui -->
+                    <div class="loading-transactions">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Carregando transações...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/saldo.js"></script>
+</body>
+</html> 

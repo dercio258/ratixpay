@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RatixPay - Gestão de Produtos</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="assets/js/config.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Menu Lateral -->
+        <div class="sidebar">
+            <h2>RatixPay</h2>
+            <ul>
+                <li>
+                    <a href="dashboard.html" data-section="painel">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Painel</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="gestao-produtos.html" class="active" data-section="produtos">
+                        <i class="fas fa-box"></i>
+                        <span>Gestão de Produto</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="gestao-vendas.html" data-section="vendas">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Gestão de Vendas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="integracoes.html" data-section="integracoes">
+                        <i class="fas fa-plug"></i>
+                        <span>Integrações</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="saldo.html" data-section="saldo">
+                        <i class="fas fa-wallet"></i>
+                        <span>Saldo</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="ferramentas.html" data-section="ferramentas">
+                        <i class="fas fa-tools"></i>
+                        <span>Ferramentas</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Conteúdo Principal -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="dashboard-header">
+                <h1>Gestão de Produtos</h1>
+            </div>
+            
+        <div class="products-header">
+            <h1 class="products-title">Gestão de Produtos</h1>
+            <a href="criar-produto.html" class="new-product-btn">
+                <i class="fas fa-plus"></i> Novo Produto
+            </a>
+        </div>
+
+        <div id="loading" class="loading-state" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>Carregando produtos...</p>
+        </div>
+
+        <div id="produtos-container">
+            <!-- Produtos serão carregados aqui -->
+        </div>
+
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <h3>Nenhum produto encontrado</h3>
+            <p>Comece criando seu primeiro produto para venda.</p>
+            <a href="criar-produto.html" class="btn">
+                <i class="fas fa-plus"></i> Criar Primeiro Produto
+            </a>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <div id="modal-confirmacao" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Confirmar Ação</h3>
+            <p id="modal-mensagem"></p>
+            <div class="modal-actions">
+                <button id="btn-confirmar" class="btn btn-danger">Confirmar</button>
+                <button id="btn-cancelar" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+        </div>
+    </div>
+
+    <script src="assets/js/gestao-produtos.js"></script>
+</body>
+</html>
+
